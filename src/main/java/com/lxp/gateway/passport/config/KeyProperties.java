@@ -1,5 +1,6 @@
 package com.lxp.gateway.passport.config;
 
+import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.security.KeyFactory;
@@ -14,6 +15,17 @@ public class KeyProperties {
 
     private String privateKeyString;
     private String publicKeyString;
+
+    @Getter
+    private int durationMillis;
+
+    public KeyProperties(String privateKeyString,
+                         String publicKeyString,
+                         int durationMillis) {
+        this.privateKeyString = privateKeyString;
+        this.publicKeyString = publicKeyString;
+        this.durationMillis = durationMillis;
+    }
 
     public PrivateKey getPrivateKey() throws Exception {
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyString);

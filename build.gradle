@@ -30,8 +30,9 @@ ext {
 }
 
 dependencies {
-    //gateway
+    //gateway & circuit-breaker
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
     testImplementation 'io.projectreactor:reactor-test'
 
     //common

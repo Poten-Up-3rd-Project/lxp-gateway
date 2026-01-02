@@ -5,7 +5,8 @@ import com.lxp.common.domain.exception.ErrorCode;
 public enum GatewayErrorCode implements ErrorCode {
 
     UNAUTHORIZED_ACCESS("UNAUTHORIZED", "GATEWAY_001", "유효하지 않거나 만료된 토큰입니다."),
-    PASSPORT_GENERATE_FAIL("INTERNAL_SERVER_ERROR", "GATEWAY_002", "내부 신분증 생성에 실패했습니다.");
+    PASSPORT_GENERATE_FAIL("INTERNAL_SERVER_ERROR", "GATEWAY_002", "내부 신분증 생성에 실패했습니다."),
+    INTERNAL_ERROR("INTERNAL_SERVER_ERROR", "GATEWAY_003", "Internal Server Error");
 
     private final String group;
     private final String code;

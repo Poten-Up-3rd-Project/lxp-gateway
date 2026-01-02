@@ -15,10 +15,12 @@ public class PassportEncoder {
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
+    private final int duration;
 
     public PassportEncoder(KeyProperties properties) throws Exception {
         this.privateKey = properties.getPrivateKey();
         this.publicKey = properties.getPublicKey();
+        this.duration = properties.getDurationMillis();
     }
 
     /**
@@ -37,7 +39,7 @@ public class PassportEncoder {
         return Jwts.builder()
             .claims(claims)
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + 60000))
+            .expiration(new Date(System.currentTimeMillis() + duration))
             .signWith(privateKey, Jwts.SIG.RS256)
             .compact();
     }

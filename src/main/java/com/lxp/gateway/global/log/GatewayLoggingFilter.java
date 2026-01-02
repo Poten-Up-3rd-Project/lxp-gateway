@@ -3,8 +3,8 @@ package com.lxp.gateway.global.log;
 import com.lxp.gateway.global.constants.MDCConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-public class GatewayLoggingFilter implements GatewayFilter, Ordered {
+public class GatewayLoggingFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

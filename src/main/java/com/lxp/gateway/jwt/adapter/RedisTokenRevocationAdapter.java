@@ -1,6 +1,7 @@
 package com.lxp.gateway.jwt.adapter;
 
 import com.lxp.gateway.jwt.policy.TokenRevocationPolicy;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -16,30 +17,26 @@ public class RedisTokenRevocationAdapter implements TokenRevocationPolicy {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
+    @CircuitBreaker(name = "redis", fallbackMethod = "fallbackBlacklistCheck")
     public boolean isTokenBlacklisted(String token) {
-        String key = createKey(token);
-        boolean result = false;
+        Boolean exists = redisTemplate.hasKey(createKey(token));
+        boolean isBlacklisted = Boolean.TRUE.equals(exists);  // null-safe
 
-        try {
-            Boolean exists = redisTemplate.hasKey(key);
-
-            if (exists) {
-                log.info("Token is blacklisted. Key: {}", key);
-                result = true;
-            }
-        } catch (Exception e) {
-            log.error("Failed to check token blacklist status in Redis. Key: {}", key, e);
+        if (isBlacklisted) {
+            log.info("Token is blacklisted.");
         }
 
-        return result;
+        return isBlacklisted;
+    }
+
+    private boolean fallbackBlacklistCheck(String token, Throwable e) {
+        log.error("Redis circuit breaker opened. Denying token access.", e);
+        return true;
     }
 
     private String createKey(String token) {
         return TOKEN_REVOCATION_KEY + token;
     }
 
-    private boolean isTokenExpired(long durationSeconds) {
-        return durationSeconds <= 0;
-    }
 }
 

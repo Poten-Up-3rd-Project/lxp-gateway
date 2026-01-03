@@ -26,46 +26,36 @@ public class JwtPolicyImpl implements JwtPolicy {
     }
 
     @Override
-    public boolean validateToken(String token) {
+    public TokenClaims verify(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
-        } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-            log.info("Invalid JWT Signature", e);
-        } catch (ExpiredJwtException e) {
-            log.info("Expired JWT Token", e);
-        } catch (UnsupportedJwtException e) {
-            log.info("Unsupported JWT Token", e);
-        } catch (IllegalArgumentException e) {
-            log.info("JWT claims string is empty.", e);
-        }
-        return false;
-    }
-
-    @Override
-    public TokenClaims parseToken(String token) {
-        Claims claims = parseClaims(token);
-        return new TokenClaims(
-            claims.get("userId").toString(),
-            claims.getSubject(),
-            Arrays.asList(claims.get("auth").toString().split(","))
-        );
-    }
-
-    private Claims parseClaims(String accessToken) {
-        try {
-            return Jwts.parser()
+            Claims claims = Jwts.parser()
                 .verifyWith(key)
                 .build()
-                .parseSignedClaims(accessToken)
+                .parseSignedClaims(token)
                 .getPayload();
+
+            return new TokenClaims(
+                claims.get("userId").toString(),
+                claims.getSubject(),
+                Arrays.asList(claims.get("auth").toString().split(","))
+            );
+
         } catch (ExpiredJwtException e) {
-            return e.getClaims(); // 만료 시간 계산을 위한 Claims 반환
+            log.warn("Expired JWT token");
+            throw new InvalidTokenException("Expired JWT token");
+
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-            // 서명 오류, 토큰 형식 오류 등은 예외 처리
-            throw new InvalidTokenException("Invalid JWT signature or format.");
-        } catch (Exception e) {
-            return null;
+            log.warn("Invalid JWT signature or format");
+            throw new InvalidTokenException("Invalid JWT token");
+
+        } catch (UnsupportedJwtException e) {
+            log.warn("Unsupported JWT token");
+            throw new InvalidTokenException("Unsupported JWT token");
+
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT claims string is empty");
+            throw new InvalidTokenException("Invalid JWT token");
         }
     }
+
 }

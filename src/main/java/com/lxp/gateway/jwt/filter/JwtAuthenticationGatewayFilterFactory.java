@@ -3,6 +3,7 @@ package com.lxp.gateway.jwt.filter;
 import com.lxp.gateway.global.constants.MDCConstants;
 import com.lxp.gateway.jwt.adapter.AuthHeaderResolver;
 import com.lxp.gateway.jwt.adapter.PassportMapper;
+import com.lxp.gateway.jwt.exception.InvalidTokenException;
 import com.lxp.gateway.jwt.policy.JwtPolicy;
 import com.lxp.gateway.jwt.policy.TokenRevocationPolicy;
 import com.lxp.gateway.jwt.vo.TokenClaims;
@@ -20,10 +21,13 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
+
+    public static final String PASSPORT = "X-Passport";
 
     private final AuthHeaderResolver authHeaderResolver;
     private final JwtPolicy jwtPolicy;
@@ -37,18 +41,23 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
             ServerHttpRequest request = exchange.getRequest();
             String token = authHeaderResolver.resolveToken(request);
 
-            if (token == null || !jwtPolicy.validateToken(token) || revocationPolicy.isTokenBlacklisted(token)) {
-                return onError(exchange, "Token has been revoked", HttpStatus.UNAUTHORIZED);
+            if (token == null || revocationPolicy.isTokenBlacklisted(token)) {
+                return onError(exchange, "Unauthorized", HttpStatus.UNAUTHORIZED);
             }
 
-            TokenClaims tokenClaims = jwtPolicy.parseToken(token);
+            TokenClaims tokenClaims;
+            try {
+                tokenClaims = jwtPolicy.verify(token);
+            } catch (InvalidTokenException e) {
+                return onError(exchange, "Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
             return Mono.deferContextual(ctx -> {
-                String traceId = ctx.getOrDefault(MDCConstants.TRACE_ID, "unknown");
+                String traceId = ctx.getOrDefault(MDCConstants.TRACE_ID, UUID.randomUUID().toString());
                 Passport passport = passportMapper.toPassport(tokenClaims, traceId);
                 String encodedPassport = passportEncoder.encode(passport);
 
-                ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
-                    .header("X-Passport", encodedPassport)
+                ServerHttpRequest modifiedRequest = request.mutate()
+                    .header(PASSPORT, encodedPassport)
                     .build();
 
                 return chain.filter(exchange.mutate().request(modifiedRequest).build());

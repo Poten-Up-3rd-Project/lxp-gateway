@@ -1,6 +1,9 @@
 package com.lxp.gateway.jwt.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lxp.common.infrastructure.exception.ErrorResponse;
 import com.lxp.gateway.global.constants.MDCConstants;
+import com.lxp.gateway.global.exception.GatewayErrorCode;
 import com.lxp.gateway.jwt.adapter.AuthHeaderResolver;
 import com.lxp.gateway.jwt.adapter.PassportMapper;
 import com.lxp.gateway.jwt.exception.InvalidTokenException;
@@ -14,6 +17,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -34,6 +38,7 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
     private final TokenRevocationPolicy revocationPolicy;
     private final PassportEncoder passportEncoder;
     private final PassportMapper passportMapper;
+    private final ObjectMapper objectMapper;
 
     @Override
     public GatewayFilter apply(Object config) {
@@ -42,14 +47,14 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
             String token = authHeaderResolver.resolveToken(request);
 
             if (token == null || revocationPolicy.isTokenBlacklisted(token)) {
-                return onError(exchange, "Unauthorized", HttpStatus.UNAUTHORIZED);
+                return onError(exchange, GatewayErrorCode.UNAUTHORIZED_ACCESS);
             }
 
             TokenClaims tokenClaims;
             try {
                 tokenClaims = jwtPolicy.verify(token);
             } catch (InvalidTokenException e) {
-                return onError(exchange, "Unauthorized", HttpStatus.UNAUTHORIZED);
+                return onError(exchange, GatewayErrorCode.UNAUTHORIZED_ACCESS);
             }
             return Mono.deferContextual(ctx -> {
                 String traceId = ctx.getOrDefault(MDCConstants.TRACE_ID, UUID.randomUUID().toString());
@@ -65,11 +70,24 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
         };
     }
 
-    private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
+    private Mono<Void> onError(ServerWebExchange exchange, GatewayErrorCode errorCode) {
         ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(httpStatus);
 
-        byte[] bytes = err.getBytes(StandardCharsets.UTF_8);
+        if (response.isCommitted()) {
+            return Mono.empty();
+        }
+
+        response.setStatusCode(HttpStatus.valueOf(errorCode.getCode()));
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        byte[] bytes = null;
+        try {
+            bytes = objectMapper.writeValueAsBytes(
+                new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errorCode.getGroup())
+            );
+        } catch (Exception e) {
+            bytes = ("{\"code\":500,\"message\":\"Internal Error\"}").getBytes(StandardCharsets.UTF_8);
+        }
         DataBuffer buffer = response.bufferFactory().wrap(bytes);
 
         return response.writeWith(Mono.just(buffer));

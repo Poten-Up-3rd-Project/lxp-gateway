@@ -1,4 +1,4 @@
-package com.lxp.gateway.jwt.adapter;
+package com.lxp.gateway.jwt.support;
 
 import com.lxp.gateway.global.constants.CookieConstants;
 import lombok.extern.slf4j.Slf4j;

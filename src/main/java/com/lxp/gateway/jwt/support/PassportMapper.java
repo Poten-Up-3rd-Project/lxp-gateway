@@ -1,4 +1,4 @@
-package com.lxp.gateway.jwt.adapter;
+package com.lxp.gateway.jwt.support;
 
 import com.lxp.gateway.jwt.vo.TokenClaims;
 import com.lxp.gateway.passport.model.Passport;

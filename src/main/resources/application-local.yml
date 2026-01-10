@@ -4,6 +4,13 @@ server:
 spring:
   application:
     name: gateway-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+    jpa:
+      enabled: false
   data:
     redis:
       host: localhost
@@ -17,19 +24,19 @@ spring:
             # 1. Auth Service
             # ==========================================
             - id: auth-register
-              uri: http://app-auth:8080
+              uri: http://app-auth:8082
               predicates:
                 - Path=/api-v1/auth/register
                 - Method=POST
 
             - id: auth-login
-              uri: http://app-auth:8080
+              uri: http://app-auth:8082
               predicates:
                 - Path=/api-v1/auth/login
                 - Method=POST
 
             - id: auth-logout
-              uri: http://app-auth:8080
+              uri: http://app-auth:8082
               predicates:
                 - Path=/api-v1/auth/logout
                 - Method=POST
@@ -40,7 +47,7 @@ spring:
             # 2. User Service
             # ==========================================
             - id: user-info
-              uri: http://app-user:8080
+              uri: http://app-user:8081
               predicates:
                 - Path=/api-v1/users
                 - Method=GET
@@ -48,7 +55,7 @@ spring:
                 - JwtAuthentication
 
             - id: user-update
-              uri: http://app-user:8080
+              uri: http://app-user:8081
               predicates:
                 - Path=/api-v1/users
                 - Method=PATCH
@@ -56,7 +63,7 @@ spring:
                 - JwtAuthentication
 
             - id: user-role-update
-              uri: http://app-user:8080
+              uri: http://app-user:8081
               predicates:
                 - Path=/api-v1/users/role
                 - Method=PUT
@@ -64,7 +71,7 @@ spring:
                 - JwtAuthentication
 
             - id: user-withdraw
-              uri: http://app-user:8080
+              uri: http://app-user:8081
               predicates:
                 - Path=/api-v1/users
                 - Method=DELETE

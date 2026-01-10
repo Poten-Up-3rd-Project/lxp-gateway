@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lxp.common.infrastructure.exception.ErrorResponse;
 import com.lxp.gateway.global.constants.MDCConstants;
 import com.lxp.gateway.global.exception.GatewayErrorCode;
-import com.lxp.gateway.jwt.support.AuthHeaderResolver;
-import com.lxp.gateway.jwt.support.PassportMapper;
 import com.lxp.gateway.jwt.exception.InvalidTokenException;
 import com.lxp.gateway.jwt.policy.JwtPolicy;
 import com.lxp.gateway.jwt.policy.TokenRevocationPolicy;
+import com.lxp.gateway.jwt.support.AuthHeaderResolver;
+import com.lxp.gateway.jwt.support.PassportMapper;
 import com.lxp.gateway.jwt.vo.TokenClaims;
 import com.lxp.gateway.passport.component.PassportEncoder;
 import com.lxp.gateway.passport.model.Passport;
@@ -77,19 +77,20 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
             return Mono.empty();
         }
 
-        response.setStatusCode(HttpStatus.valueOf(errorCode.getCode()));
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        byte[] bytes = null;
-        try {
-            bytes = objectMapper.writeValueAsBytes(
-                new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errorCode.getGroup())
-            );
-        } catch (Exception e) {
-            bytes = ("{\"code\":500,\"message\":\"Internal Error\"}").getBytes(StandardCharsets.UTF_8);
-        }
-        DataBuffer buffer = response.bufferFactory().wrap(bytes);
-
-        return response.writeWith(Mono.just(buffer));
+        return Mono.fromSupplier(() -> {
+            try {
+                return objectMapper.writeValueAsBytes(
+                    new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errorCode.getGroup())
+                );
+            } catch (Exception e) {
+                return ("{\"code\":500,\"message\":\"Internal Error\"}").getBytes(StandardCharsets.UTF_8);
+            }
+        }).flatMap(bytes -> {
+            DataBuffer buffer = response.bufferFactory().wrap(bytes);
+            return response.writeWith(Mono.just(buffer));
+        });
     }
 }

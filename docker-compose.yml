@@ -3,6 +3,9 @@ services:
   app-gateway:
     image: app-gateway:local
     container_name: gateway-container
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "8080:8089"
     depends_on:
@@ -35,8 +38,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: lxp
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
-      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       SPRING_RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8082:8082"
     depends_on:
       mysql:
         condition: service_healthy

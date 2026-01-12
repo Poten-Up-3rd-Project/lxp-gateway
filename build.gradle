@@ -35,6 +35,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
     testImplementation 'io.projectreactor:reactor-test'
 
+    //actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     //common
     implementation 'com.github.f4b6a3:uuid-creator:5.3.7'
     implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-domain:v1.0.5'

@@ -6,17 +6,17 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Component;
 
-import java.security.PrivateKey;
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
 public class PassportEncoder {
 
-    private final PrivateKey privateKey;
+    private final SecretKey key;
     private final int duration;
 
     public PassportEncoder(KeyProperties properties) throws Exception {
-        this.privateKey = properties.getPrivateKey();
+        this.key = properties.jwtSecretKey();
         this.duration = properties.getDurationMillis();
     }
 
@@ -37,7 +37,7 @@ public class PassportEncoder {
             .claims(claims)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + duration))
-            .signWith(privateKey, Jwts.SIG.RS256)
+            .signWith(key)
             .compact();
     }
 

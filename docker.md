@@ -3,5 +3,5 @@
 ```
 
 ```bash
-docker build -t app-gateway:local .
+docker build -f Dockerfile.local -t app-gateway:local .
 ```

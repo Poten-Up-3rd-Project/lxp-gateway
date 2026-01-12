@@ -1,0 +1,21 @@
+spring:
+  # Redis
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: ${SPRING_DATA_REDIS_PASSWORD}
+
+# Actuator (Health Check)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+# 서버 포트
+server:
+  port: 8080

@@ -100,13 +100,12 @@ resilience4j:
         minimum-number-of-calls: 5  # 최소 5번 호출 후 판단
 
 jwt:
-  private-key-string: ${JWT_KEY_PRIVATE:defaultPrivateKeyBase64}
-  public-key-string: ${JWT_KEY_PUBLIC:defaultPublicKeyBase64}
+  public-key-string: ${AUTH_KEY_PUBLIC_KEY_STRING:defaultPublicKeyBase64}
 
 passport:
   key:
-    secret-key: ${PASSPORT_KEY_SECRET:default-secret-key-for-testing-minimum-32chars}
-    duration-millis: ${PASSPORT_DURATION_MILLI:3600000}
+    secret-key: ${PASSPORT_SECRET:default-secret-key-for-testing-minimum-32chars}
+    duration-millis: 60000 #60초
 
 logging:
   level:

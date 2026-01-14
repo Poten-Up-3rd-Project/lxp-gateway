@@ -12,17 +12,17 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.PublicKey;
 import java.util.Arrays;
 
 @Slf4j
 @Component
 public class JwtPolicyImpl implements JwtPolicy {
 
-    private final SecretKey key;
+    private final PublicKey key;
 
-    public JwtPolicyImpl(JwtConfig jwtConfig) {
-        this.key = jwtConfig.jwtSecretKey();
+    public JwtPolicyImpl(JwtConfig jwtConfig) throws Exception {
+        this.key = jwtConfig.getPublicKey();
     }
 
     @Override

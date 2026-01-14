@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -19,8 +21,9 @@ public class RedisTokenRevocationAdapter implements TokenRevocationPolicy {
     @Override
     @CircuitBreaker(name = "redis", fallbackMethod = "fallbackBlacklistCheck")
     public boolean isTokenBlacklisted(String token) {
-        Boolean exists = redisTemplate.hasKey(createKey(token));
-        boolean isBlacklisted = Boolean.TRUE.equals(exists);  // null-safe
+        boolean isBlacklisted = Optional
+            .ofNullable(redisTemplate.hasKey(createKey(token)))
+            .orElse(false);
 
         if (isBlacklisted) {
             log.info("Token is blacklisted.");

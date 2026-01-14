@@ -25,11 +25,18 @@ public class ResponseWrapperDecorator extends ServerHttpResponseDecorator {
 
     @Override
     public @NonNull Mono<Void> writeWith(@NonNull Publisher<? extends DataBuffer> body) {
+        log.debug("writeWith called for: {}, status: {}", exchange.getRequest().getPath(), getStatusCode());
+        
         if (Objects.nonNull(getStatusCode()) && getStatusCode().is2xxSuccessful()) {
             log.debug("Wrapping 2xx response for: {}", exchange.getRequest().getPath());
-            return super.writeWith(Flux.from(body).buffer().flatMap(dataBuffers ->
-                Mono.just(wrapperHelper.wrapResponse(dataBuffers, exchange.getResponse()))
-            ).doOnError(e -> log.error("Error in response wrapping", e)));
+            return super.writeWith(Flux.from(body)
+                .doOnNext(buffer -> log.debug("Received buffer with {} bytes", buffer.readableByteCount()))
+                .collectList()
+                .doOnNext(buffers -> log.debug("Collected {} data buffers", buffers.size()))
+                .flatMapMany(dataBuffers ->
+                    Flux.just(wrapperHelper.wrapResponse(dataBuffers, exchange.getResponse()))
+                )
+                .doOnError(e -> log.error("Error in response wrapping", e)));
         }
         log.debug("Skipping wrap for non-2xx: {}", getStatusCode());
         return super.writeWith(body);

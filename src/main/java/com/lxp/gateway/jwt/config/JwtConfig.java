@@ -17,7 +17,11 @@ public class JwtConfig {
     }
 
     public PublicKey getPublicKey() throws Exception {
-        byte[] keyBytes = Base64.getDecoder().decode(publicKeyString);
+        String key = publicKeyString
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s", "");
+        byte[] keyBytes = Base64.getDecoder().decode(key);
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePublic(spec);

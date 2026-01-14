@@ -2,6 +2,7 @@ package com.lxp.gateway.global.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lxp.common.domain.exception.DomainException;
+import com.lxp.common.infrastructure.exception.ApiResponse;
 import com.lxp.common.infrastructure.exception.ErrorResponse;
 import com.lxp.common.infrastructure.exception.GlobalExceptionHandler;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +65,8 @@ public class GlobalErrorWebExceptionHandler extends GlobalExceptionHandler imple
 
     private Mono<Void> writeResponse(ServerHttpResponse response, ErrorResponse error) {
         try {
-            byte[] bytes = objectMapper.writeValueAsBytes(error);
+            ApiResponse<?> wrappedResponse = ApiResponse.error(error);
+            byte[] bytes = objectMapper.writeValueAsBytes(wrappedResponse);
             DataBuffer buffer = response.bufferFactory().wrap(bytes);
             return response.writeWith(Mono.just(buffer));
         } catch (Exception e) {

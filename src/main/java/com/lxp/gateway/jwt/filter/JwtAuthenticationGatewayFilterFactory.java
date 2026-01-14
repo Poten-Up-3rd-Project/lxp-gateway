@@ -1,6 +1,7 @@
 package com.lxp.gateway.jwt.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lxp.common.infrastructure.exception.ApiResponse;
 import com.lxp.common.infrastructure.exception.ErrorResponse;
 import com.lxp.gateway.global.constants.MDCConstants;
 import com.lxp.gateway.global.exception.GatewayErrorCode;
@@ -82,11 +83,15 @@ public class JwtAuthenticationGatewayFilterFactory extends AbstractGatewayFilter
 
         return Mono.fromSupplier(() -> {
             try {
-                return objectMapper.writeValueAsBytes(
-                    new ErrorResponse(errorCode.getCode(), errorCode.getMessage(), errorCode.getGroup())
+                ErrorResponse errorResponse = new ErrorResponse(
+                    errorCode.getCode(),
+                    errorCode.getMessage(),
+                    errorCode.getGroup()
                 );
+                ApiResponse<?> wrappedResponse = ApiResponse.error(errorResponse);
+                return objectMapper.writeValueAsBytes(wrappedResponse);
             } catch (Exception e) {
-                return ("{\"code\":500,\"message\":\"Internal Error\"}").getBytes(StandardCharsets.UTF_8);
+                return ("{\"success\":false,\"error\":{\"code\":500,\"message\":\"Internal Error\"}}").getBytes(StandardCharsets.UTF_8);
             }
         }).flatMap(bytes -> {
             DataBuffer buffer = response.bufferFactory().wrap(bytes);

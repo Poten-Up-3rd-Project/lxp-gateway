@@ -3,17 +3,14 @@ package com.lxp.gateway.global.constants;
 /**
  * HTTP Cookie 이름 및 관련 상수 정의
  */
-public final class CookieConstants {
-
-    private CookieConstants() {
-    } // 인스턴스화 방지
+public interface CookieConstants {
 
     // Access Token Cookie 이름
-    public static final String ACCESS_TOKEN_NAME = "access_token";
+    String ACCESS_TOKEN_NAME = "access_token";
 
     // HTTP Only 속성
-    public static final boolean HTTP_ONLY = true;
+    boolean HTTP_ONLY = true;
 
     // Cookie Path
-    public static final String DEFAULT_PATH = "/";
+    String DEFAULT_PATH = "/";
 }

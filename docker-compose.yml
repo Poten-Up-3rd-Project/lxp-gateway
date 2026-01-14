@@ -1,0 +1,114 @@
+name: lxp-gateway-local
+services:
+  app-gateway:
+    image: app-gateway:local
+    container_name: gateway-container
+    environment:
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
+      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
+      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+    ports:
+      - "8080:8089"
+    depends_on:
+      - app-user
+      - app-auth
+
+  app-user:
+    image: app-user:local
+    container_name: user-container
+    environment:
+      SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
+      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
+      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+
+  app-auth:
+    image: app-auth:local
+    container_name: auth-container
+    environment:
+      SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
+      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
+      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: lxp-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --skip-ssl
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=Asia/Seoul
+    environment:
+      MYSQL_DATABASE: ${DATABASE_NAME}
+      MYSQL_USER: ${DATASOURCE_USERNAME}
+      MYSQL_PASSWORD: ${DATASOURCE_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DATASOURCE_PASSWORD_ROOT}
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u lxp -plxp || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-container
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  redis-data:
+

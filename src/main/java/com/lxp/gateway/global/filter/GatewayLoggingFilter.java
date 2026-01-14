@@ -1,4 +1,4 @@
-package com.lxp.gateway.global.log;
+package com.lxp.gateway.global.filter;
 
 import com.lxp.gateway.global.constants.MDCConstants;
 import lombok.extern.slf4j.Slf4j;

@@ -134,7 +134,19 @@ spring:
                 - Method=GET
 
             # ==========================================
-            # 7. Recommend Service
+            # 7. Like Service
+            # ==========================================
+
+            - id: like-api
+              uri: http://lxp-content:8080
+              predicates:
+                - Path=/api-v1/likes/**
+                - Method=GET,POST,DELETE
+              filters:
+                - JwtAuthentication
+
+            # ==========================================
+            # 8. Recommend Service
             # ==========================================
 
 # Actuator (Health Check)

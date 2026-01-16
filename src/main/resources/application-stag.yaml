@@ -79,19 +79,11 @@ spring:
                 - Path=/api-v1/courses/{courseId}
                 - Method=GET
 
-            - id: course-update
+            - id: course-update-delete
               uri: http://lxp-content:8080
               predicates:
                 - Path=/api-v1/courses/{courseId}
-                - Method=PATCH
-              filters:
-                - JwtAuthentication
-
-            - id: course-delete
-              uri: http://lxp-content:8080
-              predicates:
-                - Path=/api-v1/courses/{courseId}
-                - Method=DELETE
+                - Method=PATCH,DELETE
               filters:
                 - JwtAuthentication
 
@@ -135,34 +127,10 @@ spring:
             # 6. Admin Service
             # ==========================================
 
-            - id: tag-details-get
+            - id: tag-api
               uri: http://lxp-admin:8080
               predicates:
-                - Path=/api-v1/tags/{tagId}
-                - Method=GET
-
-            - id: tag-find-by-id
-              uri: http://lxp-admin:8080
-              predicates:
-                - Path=/api-v1/tags/findByIds
-                - Method=GET
-
-            - id: tag-find-by-name
-              uri: http://lxp-admin:8080
-              predicates:
-                - Path=/api-v1/tags/findByNames
-                - Method=GET
-
-            - id: tag-search
-              uri: http://lxp-admin:8080
-              predicates:
-                - Path=/api-v1/tags/search
-                - Method=GET
-
-            - id: tag-get
-              uri: http://lxp-admin:8080
-              predicates:
-                - Path=/api-v1/tags
+                - Path=/api-v1/tags/**
                 - Method=GET
 
             # ==========================================

@@ -79,19 +79,11 @@ spring:
                 - Path=/api-v1/courses/{courseId}
                 - Method=GET
 
-            - id: course-update
+            - id: course-update-delete
               uri: http://lxp-content:8080
               predicates:
                 - Path=/api-v1/courses/{courseId}
-                - Method=PATCH
-              filters:
-                - JwtAuthentication
-
-            - id: course-delete
-              uri: http://lxp-content:8080
-              predicates:
-                - Path=/api-v1/courses/{courseId}
-                - Method=DELETE
+                - Method=PATCH,DELETE
               filters:
                 - JwtAuthentication
 
@@ -132,7 +124,17 @@ spring:
                 - JwtAuthentication
 
             # ==========================================
-            # 6. Recommend Service
+            # 6. Admin Service
+            # ==========================================
+
+            - id: tag-api
+              uri: http://lxp-admin:8080
+              predicates:
+                - Path=/api-v1/tags/**
+                - Method=GET
+
+            # ==========================================
+            # 7. Recommend Service
             # ==========================================
 
 # Actuator (Health Check)

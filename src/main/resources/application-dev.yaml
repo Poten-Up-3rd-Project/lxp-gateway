@@ -148,6 +148,13 @@ spring:
             # ==========================================
             # 8. Recommend Service
             # ==========================================
+            - id: recommend-api
+              uri: http://lxp-recommend:8080
+              predicates:
+                - Path=/api-v1/recommend/**
+                - Method=GET,POST
+              filters:
+                - JwtAuthentication
 
 # Actuator (Health Check)
 management:

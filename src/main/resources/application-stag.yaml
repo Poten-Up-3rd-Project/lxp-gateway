@@ -107,24 +107,8 @@ spring:
             - id: enrollment-api
               uri: http://lxp-enrollment:8080
               predicates:
-                - Path=/api-v1/enrollments
+                - Path=/api-v1/enrollments/**
                 - Method=GET,POST
-              filters:
-                - JwtAuthentication
-
-            - id: enrollment-api-cancel
-              uri: http://lxp-enrollment:8080
-              predicates:
-                - Path=/api-v1/enrollments
-                - Method=POST
-              filters:
-                - JwtAuthentication
-
-            - id: enrollment-api-details
-              uri: http://lxp-enrollment:8080
-              predicates:
-                - Path=/api-v1/enrollments/{courseId}
-                - Method=POST
               filters:
                 - JwtAuthentication
 

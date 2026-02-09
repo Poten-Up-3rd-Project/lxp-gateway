@@ -6,9 +6,9 @@ services:
     environment:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     ports:
       - "8080:8089"
@@ -20,15 +20,17 @@ services:
     image: app-user:local
     container_name: user-container
     environment:
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
       SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     depends_on:
       mysql:
@@ -48,9 +50,9 @@ services:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     ports:
       - "8082:8082"
@@ -61,6 +63,78 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+
+  app-content:
+    image: app-content:local
+    container_name: content-container
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_REGION: ${R2_REGION}
+      R2_DEFAULT_TTL_SECONDS: ${R2_DEFAULT_TTL_SECONDS}
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  qna-engine:
+    image: qna-engine:local
+    container_name: qna-engine
+    environment:
+      # RabbitMQ
+      RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:5672/
+      RABBIT_EXCHANGE: content.events
+      RABBIT_ROUTING_KEY: qna.created
+      RABBIT_QUEUE: lxp-qna-engine.qna-created
+
+      # 콜백 (QnA 서버: app-content)
+      QNA_CALLBACK_BASE: http://app-content:8083/api-v1/qna
+
+      # 스케줄 (KST 12:00 / 18:00)
+      TIMEZONE: Asia/Seoul
+      CRON_1: "0 12 * * *"
+      CRON_2: "0 18 * * *"
+      IMMEDIATE_PROCESS: "false"
+
+      # LLM
+      LLM_PROVIDER: openai
+      OPENAI_MODEL: ${OPENAI_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # 로깅
+      LOG_LEVEL: INFO
+
+      # 로컬 SQLite 파일 저장 위치
+      DB_DSN: sqlite+pysqlite:////data/qna.db
+    volumes:
+      - qna_engine_data:/data
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      app-content:
+        condition: service_started
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine

@@ -1,3 +1,11 @@
+services:
+  user: http://lxp-user:8080
+  auth: http://lxp-auth:8080
+  content: http://lxp-content:8080
+  enrollment: http://lxp-enrollment:8080
+  admin: http://lxp-admin:8080
+  recommend: http://lxp-recommend:8080
+
 spring:
   # Redis
   data:
@@ -15,19 +23,19 @@ spring:
             # 1. Auth Service
             # ==========================================
             - id: auth-register
-              uri: http://lxp-auth:8080
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/register
                 - Method=POST
 
             - id: auth-login
-              uri: http://lxp-auth:8080
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/login
                 - Method=POST
 
             - id: auth-logout
-              uri: http://lxp-auth:8080
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/logout
                 - Method=POST
@@ -37,35 +45,10 @@ spring:
             # ==========================================
             # 2. User Service
             # ==========================================
-            - id: user-info
-              uri: http://lxp-user:8080
+            - id: user-private
+              uri: ${services.user}
               predicates:
-                - Path=/api-v1/users
-                - Method=GET
-              filters:
-                - JwtAuthentication
-
-            - id: user-update
-              uri: http://lxp-user:8080
-              predicates:
-                - Path=/api-v1/users
-                - Method=PATCH
-              filters:
-                - JwtAuthentication
-
-            - id: user-role-update
-              uri: http://lxp-user:8080
-              predicates:
-                - Path=/api-v1/users/role
-                - Method=PUT
-              filters:
-                - JwtAuthentication
-
-            - id: user-withdraw
-              uri: http://lxp-user:8080
-              predicates:
-                - Path=/api-v1/users
-                - Method=DELETE
+                - Path=/api-v1/users/**
               filters:
                 - JwtAuthentication
 
@@ -73,31 +56,36 @@ spring:
             # 3. Course Service
             # ==========================================
 
-            - id: course-detail-get
-              uri: http://lxp-content:8080
+            - id: course-public
+              uri: ${services.content}
               predicates:
-                - Path=/api-v1/courses/{courseId}
-                - Method=GET
+                - Path=/api-v1/courses/public/**
 
-            - id: course-update-delete
-              uri: http://lxp-content:8080
+            - id: course-private
+              uri: ${services.content}
               predicates:
-                - Path=/api-v1/courses/{courseId}
-                - Method=PATCH,DELETE
+                - Path=/api-v1/courses/**
               filters:
                 - JwtAuthentication
 
-            - id: course-get
-              uri: http://lxp-content:8080
+            - id: resource-private
+              uri: ${services.content}
               predicates:
-                - Path=/api-v1/courses
+                - Path=/api-v1/resources/**
+              filters:
+                - JwtAuthentication
+
+            - id: qna-public
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/qna/public/**
                 - Method=GET
 
-            - id: course-create
-              uri: http://lxp-content:8080
+            - id: qna-private
+              uri: ${services.content}
               predicates:
-                - Path=/api-v1/courses
-                - Method=POST
+                - Path=/api-v1/qna/**
+                - Method=GET
               filters:
                 - JwtAuthentication
 
@@ -105,53 +93,43 @@ spring:
             # 4. Enrollment Service
             # ==========================================
             - id: enrollment-api
-              uri: http://lxp-enrollment:8080
+              uri: ${services.enrollment}
               predicates:
                 - Path=/api-v1/enrollments/**
-                - Method=GET,POST
               filters:
                 - JwtAuthentication
 
             # ==========================================
             # 5. Progress Service
             # ==========================================
-            - id: progress-update
-              uri: http://lxp-content:8080
+            - id: progress-private
+              uri: ${services.content}
               predicates:
-                - Path=/api-v1/progress/{courseId}/{lectureId}
-                - Method=PATCH
+                - Path=/api-v1/progress/**
               filters:
                 - JwtAuthentication
 
             # ==========================================
             # 6. Admin Service
             # ==========================================
-
             - id: tag-api
-              uri: http://lxp-admin:8080
+              uri: ${services.admin}
               predicates:
                 - Path=/api-v1/tags/**
                 - Method=GET
 
             # ==========================================
-            # 7. Like Service
-            # ==========================================
-            - id: like-api
-              uri: http://lxp-content:8080
-              predicates:
-                - Path=/api-v1/likes/**
-                - Method=GET,POST,DELETE
-              filters:
-                - JwtAuthentication
-
-            # ==========================================
-            # 8. Recommend Service
+            # 7. Recommend Service
             # ==========================================
             - id: recommend-api
-              uri: http://lxp-recommend:8080
+              uri: ${services.recommend}
+              predicates:
+                - Path=/api-v1/recommend/public/**
+
+            - id: recommend-api
+              uri: ${services.recommend}
               predicates:
                 - Path=/api-v1/recommend/**
-                - Method=GET,POST
               filters:
                 - JwtAuthentication
 

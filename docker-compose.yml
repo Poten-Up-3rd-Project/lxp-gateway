@@ -6,35 +6,40 @@ services:
     environment:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     ports:
       - "8080:8089"
     depends_on:
       - app-user
       - app-auth
+      - app-content
 
   app-user:
     image: app-user:local
     container_name: user-container
     environment:
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
       SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     depends_on:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
 
   app-auth:
     image: app-auth:local
@@ -48,9 +53,11 @@ services:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
-      JWT_KEY_PRIVATE: ${JWT_KEY_PRIVATE}
-      JWT_KEY_PUBLIC: ${JWT_KEY_PUBLIC}
-      PASSPORT_KEY_SECRET: ${PASSPORT_KEY_SECRET}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
       PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
     ports:
       - "8082:8082"
@@ -58,9 +65,90 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
+
+  app-content:
+    image: app-content:local
+    container_name: content-container
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_REGION: ${R2_REGION}
+      R2_DEFAULT_TTL_SECONDS: ${R2_DEFAULT_TTL_SECONDS}
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  qna-engine:
+    image: qna-engine:local
+    container_name: qna-engine
+    environment:
+      # RabbitMQ
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
+      RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:5672/
+      RABBIT_EXCHANGE: ${RABBIT_EXCHANGE}
+      RABBIT_ROUTING_KEY: ${RABBIT_ROUTING_KEY}
+      RABBIT_QUEUE: ${RABBIT_QUEUE}
+
+      # 콜백 (QnA 서버: app-content)
+      QNA_CALLBACK_BASE: ${QNA_CALLBACK_BASE}
+
+      # 스케줄 (KST 12:00 / 18:00)
+      TIMEZONE: Asia/Seoul
+      CRON_1: ${CRON_1}
+      CRON_2: ${CRON_2}
+      IMMEDIATE_PROCESS: ${IMMEDIATE_PROCESS}
+
+      # LLM
+      LLM_PROVIDER: openai
+      GEMINI_KEY: ${GEMINI_KEY}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+      MODEL: ${MODEL}
+      MODEL_PROVIDER: ${MODEL_PROVIDER}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS}
+
+      # 로깅
+      LOG_LEVEL: ${LOG_LEVEL}
+
+      # 로컬 SQLite 파일 저장 위치
+      DB_DSN: sqlite+pysqlite:////data/qna.db
+    volumes:
+      - qna_engine_data:/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      app-content:
+        condition: service_started
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -100,8 +188,19 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-container
+    user: "999:999"
     ports:
       - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-lxp}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-lxp}
+#      RABBITMQ_NODENAME: rabbit@localhost
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    depends_on:
+      rabbitmq-perms:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
@@ -109,6 +208,16 @@ services:
       retries: 10
       start_period: 20s
 
+  rabbitmq-perms:
+    image: alpine:3.20
+    user: "0:0"
+    command: sh -c 'chown -R 999:999 /var/lib/rabbitmq && chmod 700 /var/lib/rabbitmq'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: "no"
+
 volumes:
   redis-data:
+  rabbitmq_data:
+  qna_engine_data:
 

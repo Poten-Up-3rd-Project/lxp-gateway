@@ -40,9 +40,9 @@ dependencies {
 
     //common
     implementation 'com.github.f4b6a3:uuid-creator:5.3.7'
-    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-domain:v1.0.5'
-    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-application:v1.0.5'
-    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-infrastructure:v1.0.5'
+    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-domain:v1.1.6'
+    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-application:v1.1.6'
+    implementation 'com.github.Poten-Up-3rd-Project.common-lib:common-infrastructure:v1.1.6'
 
     //security
     implementation 'org.springframework.boot:spring-boot-starter-security'

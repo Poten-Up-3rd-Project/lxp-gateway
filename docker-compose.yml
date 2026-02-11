@@ -15,6 +15,7 @@ services:
     depends_on:
       - app-user
       - app-auth
+      - app-content
 
   app-user:
     image: app-user:local
@@ -24,6 +25,8 @@ services:
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
       SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
@@ -36,7 +39,7 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
 
   app-auth:
     image: app-auth:local
@@ -50,6 +53,8 @@ services:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
       AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
       AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
       PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
@@ -60,7 +65,7 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -77,6 +82,8 @@ services:
       SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
       SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
       SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
       AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
       AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
       PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
@@ -94,7 +101,7 @@ services:
       mysql:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -103,27 +110,34 @@ services:
     container_name: qna-engine
     environment:
       # RabbitMQ
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
       RABBITMQ_URL: amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:5672/
-      RABBIT_EXCHANGE: content.events
-      RABBIT_ROUTING_KEY: qna.created
-      RABBIT_QUEUE: lxp-qna-engine.qna-created
+      RABBIT_EXCHANGE: ${RABBIT_EXCHANGE}
+      RABBIT_ROUTING_KEY: ${RABBIT_ROUTING_KEY}
+      RABBIT_QUEUE: ${RABBIT_QUEUE}
 
       # 콜백 (QnA 서버: app-content)
-      QNA_CALLBACK_BASE: http://app-content:8083/api-v1/qna
+      QNA_CALLBACK_BASE: ${QNA_CALLBACK_BASE}
 
       # 스케줄 (KST 12:00 / 18:00)
       TIMEZONE: Asia/Seoul
-      CRON_1: "0 12 * * *"
-      CRON_2: "0 18 * * *"
-      IMMEDIATE_PROCESS: "false"
+      CRON_1: ${CRON_1}
+      CRON_2: ${CRON_2}
+      IMMEDIATE_PROCESS: ${IMMEDIATE_PROCESS}
 
       # LLM
       LLM_PROVIDER: openai
-      OPENAI_MODEL: ${OPENAI_MODEL}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GEMINI_KEY: ${GEMINI_KEY}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+      MODEL: ${MODEL}
+      MODEL_PROVIDER: ${MODEL_PROVIDER}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS}
 
       # 로깅
-      LOG_LEVEL: INFO
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # 로컬 SQLite 파일 저장 위치
       DB_DSN: sqlite+pysqlite:////data/qna.db
@@ -131,7 +145,7 @@ services:
       - qna_engine_data:/data
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       app-content:
         condition: service_started
     restart: unless-stopped
@@ -174,8 +188,19 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq-container
+    user: "999:999"
     ports:
       - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-lxp}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-lxp}
+#      RABBITMQ_NODENAME: rabbit@localhost
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    depends_on:
+      rabbitmq-perms:
+        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
@@ -183,6 +208,16 @@ services:
       retries: 10
       start_period: 20s
 
+  rabbitmq-perms:
+    image: alpine:3.20
+    user: "0:0"
+    command: sh -c 'chown -R 999:999 /var/lib/rabbitmq && chmod 700 /var/lib/rabbitmq'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: "no"
+
 volumes:
   redis-data:
+  rabbitmq_data:
+  qna_engine_data:
 

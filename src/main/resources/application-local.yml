@@ -1,6 +1,15 @@
 server:
   port: 8089
 
+services:
+  user: http://app-user:8081
+  auth: http://app-auth:8082
+  content: http://app-content:8083
+  enrollment: http://app-enrollment:8084
+  admin: http://lxp-admin:8080
+  recommend: http://lxp-recommend:8080
+
+
 spring:
   application:
     name: gateway-service
@@ -24,19 +33,19 @@ spring:
             # 1. Auth Service
             # ==========================================
             - id: auth-register
-              uri: http://app-auth:8082
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/register
                 - Method=POST
 
             - id: auth-login
-              uri: http://app-auth:8082
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/login
                 - Method=POST
 
             - id: auth-logout
-              uri: http://app-auth:8082
+              uri: ${services.auth}
               predicates:
                 - Path=/api-v1/auth/logout
                 - Method=POST
@@ -46,45 +55,58 @@ spring:
             # ==========================================
             # 2. User Service
             # ==========================================
-            - id: user-info
-              uri: http://app-user:8081
+            - id: user-private
+              uri: ${services.user}
               predicates:
-                - Path=/api-v1/users
-                - Method=GET
-              filters:
-                - JwtAuthentication
-
-            - id: user-update
-              uri: http://app-user:8081
-              predicates:
-                - Path=/api-v1/users
-                - Method=PATCH
-              filters:
-                - JwtAuthentication
-
-            - id: user-role-update
-              uri: http://app-user:8081
-              predicates:
-                - Path=/api-v1/users/role
-                - Method=PUT
-              filters:
-                - JwtAuthentication
-
-            - id: user-withdraw
-              uri: http://app-user:8081
-              predicates:
-                - Path=/api-v1/users
-                - Method=DELETE
+                - Path=/api-v1/users/**
               filters:
                 - JwtAuthentication
 
             # ==========================================
             # 3. Course Service
             # ==========================================
+            - id: course-public
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/courses/public/**
+
+            - id: course-private
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/courses/**
+              filters:
+                - JwtAuthentication
+
+            - id: resource-private
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/resources/**
+              filters:
+                - JwtAuthentication
+
+            - id: qna-public
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/qna/public/**
+                - Method=GET
+
+            - id: qna-private
+              uri: ${services.content}
+              predicates:
+                - Path=/api-v1/qna/**
+                - Method=GET
+              filters:
+                - JwtAuthentication
 
             # ==========================================
             # 4. Enrollment Service
             # ==========================================
+            - id: enrollment-api
+              uri: ${services.enrollment}
+              predicates:
+                - Path=/api-v1/enrollments/**
+              filters:
+                - JwtAuthentication
 
             # ==========================================
             # 5. Recommend Service

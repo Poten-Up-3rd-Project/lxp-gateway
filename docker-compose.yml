@@ -105,6 +105,35 @@ services:
       redis:
         condition: service_healthy
 
+  app-enrollment:
+    image: app-enrollment:local
+    container_name: enrollment-container
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: ${DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATASOURCE_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      SPRING_RABBITMQ_HOST: ${RABBITMQ_HOST}
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-lxp}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-lxp}
+      AUTH_KEY_PRIVATE_KEY_STRING: ${AUTH_KEY_PRIVATE_KEY_STRING}
+      AUTH_KEY_PUBLIC_KEY_STRING: ${AUTH_KEY_PUBLIC_KEY_STRING}
+      PASSPORT_KEY_SECRET_KEY: ${PASSPORT_KEY_SECRET_KEY}
+      PASSPORT_DURATION_MILLI: ${PASSPORT_DURATION_MILLI}
+    ports:
+      - "8084:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   qna-engine:
     image: qna-engine:local
     container_name: qna-engine
